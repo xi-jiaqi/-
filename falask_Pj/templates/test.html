@@ -1,0 +1,1149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+
+    <link rel="stylesheet" href="/static/bootstrap/bootstrap.min.css">
+
+    <link rel="stylesheet" type="text/css" href="/static/jquery/jquery.dataTables.css">
+
+    <style type="text/css">
+        .table{border:1px solid #F00;border-collapse: collapse}
+        .table th{border:1px solid #F00;}
+        .table td{border:1px solid #F00;}
+        .table > thead > tr > th {vertical-align: bottom;border-bottom: 1px solid #F00;}
+
+        .drag_main{ position: absolute;width: 870px; height: 660px; background-color: #f5f5f5; opacity:1; left:0; margin-left:10%; top:0; margin-top:0;  z-index: 1000; box-shadow: darkgrey 1px 1px 10px 1px; }
+        /* 已查验 */
+        .already_big{ position: absolute; background-image: url(../images/shuiyin.png);background-repeat: no-repeat; width: 249px;height: 270px; top:50%; margin-top: -135px; left: 50%; margin-left: -124.5px;}
+        .success_tip{ position: absolute; top:0px; color:#2883ff; font-size: 18px; width:135px; height:36px; background: #e9f2ff; text-align: center; line-height: 36px; left:50%; margin-left:-67.5px;}
+        .error_tip{ position: absolute; top:-50px; color:#ff2a2a; font-size: 26px;}
+
+        /* 发票填充 */
+        .invoice_box{ padding:35px 44px 20px 44px; color:#964300; line-height: 20px; font-weight: bold; background-color:#ffffff; font-size: 6px;}
+        .invoice_box span{ color:#808080; font-size: 8px; }
+        .drag_box td{ word-wrap:break-word; }
+        .un_line{ width:100%; height:5px; border-top:2px solid #964300; border-bottom:1px solid #b88787;}
+        .invoice_box div{ display: inline-block;}
+        .top_left{ width:23%;}
+        .top_middle{ width:50%; text-align: center; line-height: 30px; font-size: 12px;}
+        .top_right{ width:22%; }
+
+        .invoice_top{ width:100%;}
+        .invoice_center{ width:100%;}
+        .invoice_bottom{ width:100%;}
+        .itable{ border-left:2px solid #b88787; border-top:2px solid #b88787;}
+        .itable td,.ii_table td{ border-right:2px solid #b88787; }
+        .ii_table{ border-left:2px solid #b88787; }
+        .invoice_bottom p{ display:inline-block; width:168px; padding-left:14px;}
+
+        /*tab切换样式*/
+        *{
+            margin:0;
+            padding:0;
+            text-decoration:none;
+            list-style:none;
+        }
+        a{
+            color:#fff;
+            font-size:13px;
+            display:block;
+        }
+        a:hover{
+            color:#ccc;
+        }
+        .wrap{
+            margin:700px auto;
+            width:250px;
+            height:auto;
+        }
+        .container-top{
+            height:30px;
+        }
+        .container-bottom{
+            height:60px;
+            overflow:hidden;
+        }
+        .container-top ul{
+            height:30px;
+        }
+        .container-top ul li{
+            float:left;
+            width:50px;
+            height:30px;
+            line-height:30px;
+            text-align:center;
+            background-color:#ccc;
+        }
+        .container-bottom ul{
+            height:60px;
+            background-image:linear-gradient(to right,#FF00FF,#E066FF);
+        }
+        .container-bottom ul li{
+            width:125px;
+            height:30px;
+            line-height:30px;
+            float:left;
+            text-align:center;
+            background:none;
+        }
+        .select{
+            background-image:linear-gradient(to right,dimgray,gray);
+        }
+    </style>
+</head>
+<body>
+
+<!--输入框下拉提示-->
+<input id="search" type="text" list="list"/>
+<datalist id="list">
+    <option value="xijiawei"/>
+    <option value="xiajiang"/>
+    <option value="liuyan"/>
+    <option value="sichuan"/>
+</datalist>
+
+<!--DataTable-->
+<div class="card" style="position:relative;width: 80%;left: 10%;top: 50px">
+    <div id="user_table_div" class="card-body">
+        <table id="user_table" class="table table-striped">
+            <thead>
+            <tr>
+                <th>用户ID</th>
+                <th>用户姓名</th>
+                <th>用户密码</th>
+                <th>用户权限</th>
+                <th>编辑</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for i in users %}
+                <tr>
+                    <td>{{ i[0] }}</td>
+                    <td>{{ i[1] }}</td>
+                    <td>{{ i[2] }}</td>
+                    <td>{{ i[3] }}</td>
+                    <td><a class='edit' onclick='deleteRow()'>删除</a></td>
+                </tr>
+            {% endfor %}
+            </tbody>
+            <tfoot>
+            <tr>
+                <td>-</td>
+                <td>-</td>
+                <td>-</td>
+                <td>{{ sum }}</td>
+                <td>-</td>
+            </tr>
+            </tfoot>
+        </table>
+    </div>
+</div>
+
+<!--合并单元格-->
+<div class="card" style="position:relative;width: 80%;left: 10%;top: 50px">
+    <div id="product_table_div" class="card-body">
+        <input type="text" id="query"/>
+        <table id="product_table" class="table table-striped">
+            <thead>
+            <tr>
+                <th>成品编码</th>
+                <th>成品型号</th>
+                <th>成品数量</th>
+                <th>物料编码</th>
+                <th>物料名称</th>
+                <th>物料数量</th>
+                <th>备注</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for product in products %}
+                <tr>
+                    <td rowspan="{{ product[3].__len__() }}">{{ product[0] }}</td>
+                    <td rowspan="{{ product[3].__len__() }}">{{ product[1] }}</td>
+                    <td rowspan="{{ product[3].__len__() }}">{{ product[2] }}</td>
+                    <td>{{ product[3][0][0] }}</td>
+                    <td>{{ product[3][0][1] }}</td>
+                    <td>{{ product[3][0][2] }}</td>
+                    <td rowspan="{{ product[3].__len__() }}">{{ product[4] }}</td>
+                </tr>
+                {% for material in product[3][1:product[3].__len__()] %}
+                    <tr>
+                        <td><input style="width: 100%; height: 100%;" value="{{ material[0] }}"></td>
+                        <td>{{ material[1] }}</td>
+                        <td>{{ material[2] }}</td>
+                    </tr>
+                {% endfor %}
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <button type="button" onclick="printTable()">打印表格</button>
+    <button type="button" onclick="export2excel()">导出表格</button>
+</div>
+
+<!--表单-->
+<div class="card" style="position:relative;width: 80%;left: 10%;top: 50px">
+    <div class="card-body">
+        <form action="#" method="post" novalidate="novalidate">
+            <div class="row">
+                <label class="control-label mb-1">选择用户</label>
+                <div class="col-xs-12">
+                    {{ form.userid }}
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-xs-12">
+                    {{ form.submit }}
+                    {{ form.csrf_token }}
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!--模态框测试-->
+<div class="card" style="position:relative;width: 80%;left: 10%;top: 50px">
+    <div class="card-body">
+        <label><a data-toggle="modal" data-target="#myModal" onclick="myFunction(1214)"> 模态框测试 </a></label>
+        <!--模态框-->
+        <div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">
+                            &times;
+                        </button>
+                        <h4 class="modal-title" id="myModalLabel">
+                            模态框（Modal）标题
+                        </h4>
+                    </div>
+                    <div class="modal-body">
+                        <label id="modalText">在这里添加一些文本</label>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-default" data-dismiss="modal">关闭
+                        </button>
+                        <button type="button" class="btn btn-primary">
+                            提交更改
+                        </button>
+                    </div>
+                </div><!-- /.modal-content -->
+            </div><!-- /.modal -->
+        </div>
+    </div>
+</div>
+
+<!--div右上角设置关闭按钮-->
+<div class="card" style="position:relative;width: 80%;left: 10%;top: 50px">
+    <div id="product_table_div" class="card-body">
+        <div class="alert alert-success alert-dismissable" id="testDiv" >
+            <button type="button" class="close" onclick="divClose()">&times;</button>
+            Hello, world!
+        </div>
+    </div>
+</div>
+
+<!--发票-->
+<div class="card" style="position:relative;width: 100%;left: 0;top: 50px">
+    <div id="product_table_div" class="card-body">
+        <div class="drag_main">
+            <div class="img_large">
+                <div class="only">
+                    <!--发票-->
+                    <div class="invoice_box">
+                        <div class="invoice_top">
+                            <div class="top_left">机器编号：<span class="machine_num" style="color:#2e2e2e"> </span></div>
+                            <div  class="top_middle">
+                                <h1 class="i_title">增值税电子普通发票</h1>
+                                <div>
+                                     <p class="un_line"></p>
+                                     <p style="opacity: 0;">———————————————————————————</p>
+                                </div>
+                            </div>
+                            <div  class="top_right">
+                                <p>发票代码：<span class="i_code" style="color:#2e2e2e"> </span></p>
+                                <p>发票号码：<span class="i_num" style="color:#2e2e2e"> </span></p>
+                                <p>开票日期：<span class="i_year"> </span>&nbsp;年&nbsp;<span class="i_month"> </span>&nbsp;月&nbsp;<span  class="i_date"> </span>&nbsp;日</p>
+                                <p>校&nbsp;验 &nbsp;码：<span class="i_checkout" style="color:#2e2e2e"> </span></p>
+                            </div>
+                        </div>
+                        <div class="invoice_center" >
+                             <table class="itable" cellspacing="0" cellpadding="0" width="787px" style="table-layout:fixed;">
+                                 <tr>
+                                     <td width="25px" style="padding-left:3px">购买方</td>
+                                     <td>
+                                         <p> &nbsp;名&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;称：<span class="i_buy_name"> </span></p>
+                                         <p> &nbsp;纳税人识别号：<span class="i_buy_distinguish" style="font-size:13px;letter-spacing:2px;"> </span></p>
+                                         <p> &nbsp;地&nbsp;址&nbsp;、电&nbsp;话：<span class="i_buy_contact"> </span></p>
+                                         <p> &nbsp;开户行及账号：<span class="i_buy_bank"> </span></p>
+                                     </td>
+                                 </tr>
+                             </table>
+                             <table class="itable itable_one" cellspacing="0" cellpadding="0" width="787px" height="157px" style="table-layout:fixed;">
+                                 <tr style="height:10px;" valign="top" align="center">
+                                     <td width="181px" height="10px">货物或应税劳务、服务名称</td>
+                                     <td width="60px" >规格型号</td>
+                                     <td width="50px" >单位</td>
+                                     <td width="80px" >数量</td>
+                                     <td width="90px" >单价</td>
+                                     <td width="90px" >金额</td>
+                                     <td width="40px" >税率</td>
+                                     <td width="80px" >税额</td>
+                                 </tr>
+                             </table>
+                             <table  class="ii_table" cellspacing="0" cellpadding="0" width="787px" style="table-layout:fixed;">
+                                 <tr align="center">
+                                     <td width="181px">合&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;计</td>
+                                     <td width="60px"></td>
+                                     <td width="50px"></td>
+                                     <td width="80px"></td>
+                                     <td width="90px"></td>
+                                     <td width="90px" align="right"><span>￥</span><span class="i_mongey"> </span></td>
+                                     <td width="40px"></td>
+                                     <td width="80px" align="right"><span>￥</span><span class="i_paid"> </span></td>
+                                 </tr>
+                             </table>
+                             <table class="itable" cellspacing="0" cellpadding="0" width="787px" style="table-layout:fixed;">
+                                 <tr>
+                                     <td width="211px">&nbsp;价税合计（大写）</td>
+                                     <td id="billMoneyCapital" width="363px" style="border-right:none; padding-left:3px;"></td>
+                                     <td style="border-left:none;" width="72px">（小写）<span>￥</span></td>
+                                     <td id="billMoney" style="border-left:none;" contenteditable="true"></td>
+                                 </tr>
+                             </table>
+                             <table class="itable" cellspacing="0" cellpadding="0" width="787px" style="table-layout:fixed; border-bottom:2px solid #b88787;">
+                                 <tr>
+                                     <td width="25px" style="padding-left:3px">销售方</td>
+                                     <td width="450px">
+                                         <p>&nbsp;名&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;称：<span class="i_sell_name"> </span></p>
+                                         <p>&nbsp;纳税人识别号：<span class="i_sell_distinguish" style="font-size:13px; letter-spacing:2px;"> </span></p>
+                                         <p>&nbsp;地&nbsp;址&nbsp;、电&nbsp;话：<span class="i_sell_contact"> </span></p>
+                                         <p>&nbsp;开户行及账号：<span class="i_sell_bank"> </span></p>
+                                     </td>
+                                     <td width="20px" style="padding:0 3px">
+                                         备注
+                                     </td>
+                                     <td valign="top" style="padding-left:3px">
+                                         <span class="i_remarks" style="width:285px;word-break: break-all;"> </span>
+                                     </td>
+                                 </tr>
+                         </table>
+                        </div>
+                        <div class="invoice_bottom">
+                            <p>收款人：<span>张三</span></p>
+                            <p>复核：<span>张三</span></p>
+                            <p>开票人：<span>张三</span></p>
+                            <p>销售方：(章)<span></span></p>
+                        </div>
+                     </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!--tab切换-->
+<div class="card" style="position:relative;width: 100%;left: 0;top: 50px">
+    <div id="product_table_div" class="card-body">
+        <div class="wrap">
+		<div class="container-top" id="tabList">
+			<ul>
+				<li><a href="">论坛</a></li>
+				<li><a href="">博客</a></li>
+				<li><a href="">交流</a></li>
+				<li><a href="">社区</a></li>
+				<li><a href="">反馈</a></li>
+			</ul>
+		</div>
+		<div class="container-bottom" id="item">
+			<div class="forum">
+				<ul>
+					<li><a href="#">论坛A</a></li>
+					<li><a href="#">论坛B</a></li>
+					<li><a href="#">论坛C</a></li>
+					<li><a href="#">论坛D</a></li>
+				</ul>
+			</div>
+			<div class="blog">
+				<ul>
+					<li><a href="#">博客A</a></li>
+					<li><a href="#">博客B</a></li>
+					<li><a href="#">博客C</a></li>
+					<li><a href="#">博客D</a></li>
+				</ul>
+			</div>
+			<div class="discuss">
+				<ul>
+					<li><a href="#">交流A</a></li>
+					<li><a href="#">交流B</a></li>
+					<li><a href="#">交流C</a></li>
+					<li><a href="#">交流D</a></li>
+				</ul>
+			</div>
+			<div class="community">
+				<ul>
+					<li><a href="#">社区A</a></li>
+					<li><a href="#">社区B</a></li>
+					<li><a href="#">社区C</a></li>
+					<li><a href="#">社区D</a></li>
+				</ul>
+			</div>
+			<div class="con">
+				<ul>
+					<li><a href="#">反馈A</a></li>
+					<li><a href="#">反馈B</a></li>
+					<li><a href="#">反馈C</a></li>
+					<li><a href="#">反馈D</a></li>
+				</ul>
+			</div>
+		</div>
+	</div>
+    </div>
+</div>
+
+<!--可编辑表格-->
+<div class="card" style="position:relative;width: 80%;left: 10%;top: 50px">
+    <div id="product_table_div" class="card-body">
+        <table width="698" border="0" cellpadding="0" cellspacing="0" id="tabProduct">
+            <tr>
+                <td width="32" align="center" bgcolor="#EFEFEF" Name="Num"><input type="checkbox" name="checkbox" value="checkbox" /></td>
+                <td width="186" bgcolor="#EFEFEF" Name="Num" EditType="TextBox">序号</td>
+                <td width="152" bgcolor="#EFEFEF" Name="ProductName" EditType="DropDownList" DataItems="{text:'A',value:'a'},{text:'B',value:'b'},{text:'C',value:'c'},{text:'D',value:'d'}">商品名称</td>
+                <td width="103" bgcolor="#EFEFEF" Name="Amount" EditType="TextBox">数量</td>
+                <td width="103" bgcolor="#EFEFEF" Name="Price" EditType="TextBox">单价</td>
+                <td width="120" bgcolor="#EFEFEF" Name="SumMoney" Expression="Amount*Price" Format="#,###.00">合计</td>
+            </tr>
+            <tr>
+                <td align="center" bgcolor="#FFFFFF"><input type="checkbox" name="checkbox2" value="checkbox" /></td>
+                <td bgcolor="#FFFFFF">1</td>
+                <td bgcolor="#FFFFFF" Value="c">C</td>
+                <td bgcolor="#FFFFFF">0</td>
+                <td bgcolor="#FFFFFF">0</td>
+                <td bgcolor="#FFFFFF">0</td>
+            </tr>
+            <tr>
+                <td align="center" bgcolor="#FFFFFF"><input type="checkbox" name="checkbox22" value="checkbox" /></td>
+                <td bgcolor="#FFFFFF">2</td>
+                <td bgcolor="#FFFFFF" Value="d">D</td>
+                <td bgcolor="#FFFFFF">0</td>
+                <td bgcolor="#FFFFFF">0</td>
+                <td bgcolor="#FFFFFF">0</td>
+            </tr>
+        </table>
+    </div>
+</div>
+
+<!--上传下载-->
+<div class="card" style="position:relative;width: 80%;left: 10%;top: 50px">
+    <div id="product_table_div" class="card-body">
+        <input id="file" type="file" name="filename"/>
+        <div class="row">
+            <div class="col-xs-12">
+                <button type="button" class="btn btn-success" onclick="upload()">上传</button>
+            </div>
+        </div>
+        <a href="{{url_for("product.upload_download")}}">text.txt</a>
+    </div>
+</div>
+
+<script src="/static/jquery/jquery-2.1.4.min.js"></script>
+<script src="/static/jquery/bootstrap.min.js"></script>
+
+<script src="/static/lib/datatables.min.js"></script>
+<script src="/static/lib/dataTables.bootstrap.min.js"></script>
+<script src="/static/lib/dataTables.buttons.min.js"></script>
+<script src="/static/lib/buttons.bootstrap.min.js"></script>
+<script src="/static/lib/jszip.min.js"></script>
+<script src="/static/lib/vfs_fonts.js"></script>
+<script src="/static/lib/buttons.html5.min.js"></script>
+<script src="/static/lib/buttons.print.min.js"></script>
+<script src="/static/lib/buttons.colVis.min.js"></script>
+<script src="/static/lib/datatables-init.js"></script>
+<script src="/static/jquery/jquery.table2excel.min.js"></script>
+
+<!--<script type="text/javascript" charset="utf8" src="/static/jquery/jquery.dataTables.js"></script>-->
+<script type="text/javascript">
+    /*输入框下拉提示*/
+    $("#search").on('input',function(e){
+        console.log($(this));
+        var filterStr=$(this).val();
+        console.log(filterStr);
+        var data={'filterStr':filterStr};
+
+        console.log(document.getElementById("search"));
+        document.getElementById("search").textContent="00000";
+        console.log(document.getElementById("search"));
+        alert("测试");
+
+        $.ajax({
+                url: "/search_material",
+                type: "POST",
+                dataType: "json",
+                data:JSON.stringify(data),
+                contentType: 'application/json; charset=UTF-8',
+                success: function (callback) {
+                    console.log(callback);
+                    if(callback['ok']){
+                        var materials=callback['materials'];//materialCode,materialName,materialType
+                        console.log(materials);
+
+                        /*var list=document.getElementById("list");
+                        console.log(list.childNodes);
+                        for(var i=0;i<list.childNodes.length;i++)
+                            list.removeChild(i);
+                        console.log(list.childNodes);
+                        for(var i=0;i<materials.length;i++) {
+                            var option=document.createElement("option");
+                            option.value=materials[i];
+                            list.appendChild(option);
+                        }
+                        console.log(list.childNodes);*/
+                        $("#list").empty();
+                        if(materials!=null)
+                            for(var i=0;i<materials.length;i++)
+                                $("#list").append('<option value="'+materials[i]+'"/>');
+                    }
+                },
+                error: function(xhr, textStatus, errorThrown) {
+                    console.log(xhr.status);// 状态码
+                    console.log(xhr.readyState);// 状态
+                    console.log(textStatus);// 错误信息
+                    //alert('返回值错误');
+                }
+            });
+    });
+
+    <!--DataTable-->
+    $.fn.dataTable.ext.buttons.print = {
+        'text': '克隆',
+        'className': 'buttons-alert',
+        action: function ( e, dt, node, config ) {
+            alert(this.text());
+
+            // 深度拷贝
+            var table= document.getElementById("user_table").cloneNode(true);
+            console.log(table);
+            console.log(document.getElementById("user_table"));
+            table.rows[1].innerHTML="<tr>\n" +
+                                "                    <td>007</td>\n" +
+                                "                    <td>James</td>\n" +
+                                "                    <td>314159</td>\n" +
+                                "                    <td>888</td>\n" +
+                                "                    <td><a class='edit' onclick='deleteRow()'>删除</a></td>";
+            console.log(table);
+            console.log(document.getElementById("user_table"));
+        }
+    };
+    $(document).ready( function () {
+        var table = $('#user_table').DataTable({
+                'paging': false,
+                'dom': 'Bfrtip',
+                'buttons': [
+                    {
+                        'text': '新增一行',
+                        action: function ( e, dt, node, config ) {
+                            alert("this");
+
+                            var table=document.getElementById("user_table");
+                            var length=table.rows.length;
+                            table.insertRow(length).innerHTML="<tr>\n" +
+                                "                    <td>007</td>\n" +
+                                "                    <td>James</td>\n" +
+                                "                    <td>314159</td>\n" +
+                                "                    <td>888</td>\n" +
+                                "                    <td><a class='edit' onclick='deleteRow()'>删除</a></td>";
+                        }
+                    },
+                    {
+                        'extend': 'print',
+                        'text': '克隆测试'
+                    }
+                ]
+            }
+        );
+
+        table.on('search.dt', function () {
+            console.log("mark");
+            console.log(table.rows({filter: 'applied'}).nodes());
+            console.log(table.rows({filter: 'applied'}).nodes().length);
+            console.log(table.rows({filter: 'applied'}).data());
+            console.log(table.rows({filter: 'applied'}).data().length);
+
+            var data = table.rows({filter: 'applied'}).data();
+            var length = table.rows({filter: 'applied'}).nodes().length;
+            var sum = 0;
+            for (var i = 0; i < length; i++) {
+                sum += parseInt(data[i][3]);
+            }
+            console.log(sum);
+
+            /*var trArr = $("#user_table tfoot").children("tr");
+            var tdArr = trArr.eq(0).find("td");
+            //tdArr.eq(3).val(sum);
+            //console.log(tdArr.eq(3).val());
+            tdArr.eq(3).text(sum);
+            console.log(tdArr.eq(3).text());*/
+            console.log($("#user_table tfoot tr td"));
+            $("#user_table tfoot tr td").eq(3).text(sum);
+        });
+    });
+    /*删除行*/
+    function deleteRow(){
+        /*console.log(event);
+        console.log(event.parentElement);*/
+
+        /*获取当前元素*/
+        //方式一：弃用，无效
+        /*var activeElement=document.activeElement;
+        console.log(activeElement);*/
+        //方式二：
+        var element=event.currentTarget;
+        console.log(element);
+        console.log(element.parentElement.parentElement);
+        //var table=document.getElementById("user_table");
+        var table=$('#user_table').DataTable();
+        var index = table.row(element.parentElement.parentElement).index();
+        console.log(index);
+
+        //table.rows(element.parentElement.parentElement).remove().draw();
+        table.rows(element.parentElement.parentElement).remove();
+        var currentPage = table.page();
+        table.page(currentPage).draw(false);
+    }
+
+    <!--合并单元格-->
+    /*表格过滤*/
+    function deepClone(obj, newObj) {
+        var newObj = newObj || {};
+        for (key in obj) {
+            if (typeof obj[key] == 'object') {
+                newObj[key] = (obj[key].constructor === Array) ? [] : {}
+                deepClone(obj[key], newObj[key]);
+            } else {
+                newObj[key] = obj[key]
+            }
+        }
+        return newObj;
+    }
+    var originTable=document.getElementById('product_table');
+    $("#query").on('input',function(e){
+        console.log($(this));
+        var filterStr=$(this).val();
+        console.log(filterStr);
+
+        //var table=document.getElementById('product_table');
+        //var table=$.extend(true, {}, originTable);
+
+        console.log(originTable);
+        var table=originTable.cloneNode(true);
+        console.log(table);
+        var data=new Array();var index=0;var rowIndexCountArr=new Array();var rowIndexArr=new Array(table.rows.length);
+        var mflag=0,flag=0,count=0;
+        for ( var i = 1; i < table.rows.length;i++) {
+            //console.log(table.rows[i]);
+            mflag=0;
+            flag=0;
+            //if(table.rows[i].cells[0].hasAttribute("rowspan"))console.log(table.rows[i].cells[0].getAttribute("rowspan"));
+            if(table.rows[i].cells[0].hasAttribute("rowspan")) {
+                rowIndexCountArr[index] = count;
+                index += 1;
+                count = 0;
+            }
+
+            for (var j = 0; j < table.rows[i].cells.length; j++) {
+                if(table.rows[i].cells[j].hasAttribute("rowspan")){
+                    if (table.rows[i].cells[j].innerHTML.indexOf(filterStr) != -1) {
+                        mflag = 1;
+                        break;
+                    }
+                }else {
+                    if (table.rows[i].cells[j].innerHTML.indexOf(filterStr) != -1) {
+                        flag = 1;
+                        break;
+                    }
+                }
+            }
+            //console.log(mflag);
+            //console.log(flag);
+            if (mflag == 1) {
+                count = parseInt(table.rows[i].cells[0].getAttribute("rowspan"));
+                for (var j = i; j < i+count; j++)
+                    rowIndexArr[j] = 1;
+
+                i+=count-1;
+            }
+            else if (mflag == 0&&flag == 1) {
+                count += 1;
+                rowIndexArr[i] = 1;
+            }else if (mflag == 0&&flag == 0) {
+                rowIndexArr[i] = 0;
+            }
+        }
+        rowIndexCountArr[index]=count;
+        console.log(rowIndexCountArr);
+        console.log(rowIndexArr);
+
+        index=1;
+        for ( var i = 1; i < table.rows.length;i++) {
+            //console.log("table.rows["+i+"]: "+table.rows[i]);
+            if(table.rows[i].cells[0].hasAttribute("rowspan")){
+                //console.log("main: "+i);
+
+                if(rowIndexCountArr[index]!==0&&rowIndexArr[i] === 1) {
+                    //console.log("rowIndexCountArr["+index+"]!==0&&rowIndexArr["+i+"] === 1");
+
+                    table.rows[i].cells[0].setAttribute("rowspan", rowIndexCountArr[index]);
+                }
+                else if(rowIndexCountArr[index]!==0&&rowIndexArr[i] === 0){
+                    //console.log("rowIndexCountArr["+index+"]!==0&&rowIndexArr["+i+"] === 0");
+                    //table.deleteRow(i);
+
+                    var firstRow=table.rows[i].cloneNode(true);
+                    //console.log(firstRow);
+                    for(var j = 0; j < table.rows[i].cells.length;j++)
+                            table.rows[i].cells[j].setAttribute("style", "display: none");
+
+                    for (var j = i+1; j < i+parseInt(table.rows[i].cells[0].getAttribute("rowspan")); j++){
+                        if(rowIndexArr[j]===1) {
+                            //console.log("add "+j);
+                            for(var k = 0; k < 3;k++)
+                                firstRow.cells[3+k].innerHTML=table.rows[j].cells[k].innerHTML;
+                            //console.log(firstRow.innerHTML);
+                            table.rows[j].innerHTML=firstRow.innerHTML;
+                            //console.log("rowIndexCountArr["+index+"]: "+rowIndexCountArr[index]);
+                            for(var k = 0; k < table.rows[j].cells.length;k++)
+                                if(table.rows[j].cells[k].hasAttribute("rowspan"))
+                                    table.rows[j].cells[k].setAttribute("rowspan", rowIndexCountArr[index]);
+                            //console.log(table.rows[j]);
+
+                            for(var k = i+1; k < j;k++)
+                                for(var l = 0; l < table.rows[k].cells.length;l++)
+                                    table.rows[k].cells[l].setAttribute("style", "display: none");
+
+                            i=j;
+                            break;
+                        }
+                    }
+                }
+                else if(rowIndexCountArr[index]===0){
+                    //console.log("rowIndexCountArr["+index+"]===0");
+
+                    for (var j = i; j < i+parseInt(table.rows[i].cells[0].getAttribute("rowspan")); j++){
+                        //table.deleteRow(j);
+                        for(var k = 0; k < table.rows[j].cells.length;k++)
+                            table.rows[j].cells[k].setAttribute("style", "display: none");
+                    }
+                }
+
+                index+=1;
+            }else {
+                if(rowIndexArr[i]===0)
+                    //table.deleteRow(i);
+                    for(var j = 0; j < table.rows[i].cells.length;j++)
+                            table.rows[i].cells[j].setAttribute("style", "display: none");
+            }
+        }
+
+        console.log(table);
+        document.getElementById('product_table').outerHTML=table.outerHTML;
+    });
+    /*打印表格*/
+    function printTable(){
+        var newstr = document.getElementById("product_table_div").innerHTML;
+        var oldstr = document.body.innerHTML;
+        document.body.innerHTML = newstr;
+        window.print();
+        document.body.innerHTML = oldstr;
+        return false;
+
+        /*var printHtml = document.getElementById("procurement_div").innerHTML;
+        var wind = window.open("",'newwindow', 'height=300, width=700, top=100, left=100, toolbar=no, menubar=no, scrollbars=no, resizable=no,location=n o, status=no');
+        wind.document.body.innerHTML = printHtml;
+        wind.print();*/
+    }
+    /*表格以excel格式导出*/
+    function export2excel() {
+        var table = document.getElementById("procurement_table");
+
+        /*if(window.ActiveXObject) {
+            var oXL = new ActiveXObject("Excel.Application");
+            var oWB = oXL.Workbooks.Add();
+            var oSheet = oWB.ActiveSheet;
+            var sel = document.body.createTextRange();
+            sel.moveToElementText(curTbl);
+            sel.select();
+            sel.execCommand("Copy");
+            oSheet.Paste();
+            oXL.Visible = true;
+        }*/
+
+        /*var html = '<html><head><meta charset=\'utf-8\' /></head><body><table id="user_table" class="table table-striped dataTable" role="grid" aria-describedby="user_table_info">\n' +
+            '            <thead>\n' +
+            '            <tr role="row"><th class="sorting_asc" tabindex="0" aria-controls="user_table" rowspan="1" colspan="1" aria-sort="ascending" aria-label="用户ID: activate to sort column descending" style="width: 80px;">用户ID</th><th class="sorting" tabindex="0" aria-controls="user_table" rowspan="1" colspan="1" aria-label="用户姓名: activate to sort column ascending" style="width: 101px;">用户姓名</th><th class="sorting" tabindex="0" aria-controls="user_table" rowspan="1" colspan="1" aria-label="用户密码: activate to sort column ascending" style="width: 101px;">用户密码</th><th class="sorting" tabindex="0" aria-controls="user_table" rowspan="1" colspan="1" aria-label="用户权限: activate to sort column ascending" style="width: 101px;">用户权限</th><th class="sorting" tabindex="0" aria-controls="user_table" rowspan="1" colspan="1" aria-label="编辑: activate to sort column ascending" style="width: 60px;">编辑</th></tr>\n' +
+            '            </thead>\n' +
+            '            <tbody>\n' +
+            '            <tr role="row" class="odd">\n' +
+            '                    <td class="sorting_1">34</td>\n' +
+            '                    <td>管理员</td>\n' +
+            '                    <td>88888888</td>\n' +
+            '                    <td>888</td>\n' +
+            '                    <td><a class="edit" onclick="deleteRow()">删除</a></td>\n' +
+            '                </tr><tr role="row" class="even">\n' +
+            '                    <td class="sorting_1">35</td>\n' +
+            '                    <td>admin</td>\n' +
+            '                    <td>88888888</td>\n' +
+            '                    <td>888</td>\n' +
+            '                    <td><a class="edit" onclick="deleteRow()">删除</a></td>\n' +
+            '                </tr><tr role="row" class="odd">\n' +
+            '                    <td class="sorting_1">36</td>\n' +
+            '                    <td>111</td>\n' +
+            '                    <td>88888888</td>\n' +
+            '                    <td>111</td>\n' +
+            '                    <td><a class="edit" onclick="deleteRow()">删除</a></td>\n' +
+            '                </tr><tr role="row" class="even">\n' +
+            '                    <td class="sorting_1">37</td>\n' +
+            '                    <td>112</td>\n' +
+            '                    <td>88888888</td>\n' +
+            '                    <td>112</td>\n' +
+            '                    <td><a class="edit" onclick="deleteRow()">删除</a></td>\n' +
+            '                </tr><tr role="row" class="odd">\n' +
+            '                    <td class="sorting_1">38</td>\n' +
+            '                    <td>113</td>\n' +
+            '                    <td>88888888</td>\n' +
+            '                    <td>113</td>\n' +
+            '                    <td><a class="edit" onclick="deleteRow()">删除</a></td>\n' +
+            '                </tr><tr role="row" class="even">\n' +
+            '                    <td class="sorting_1">39</td>\n' +
+            '                    <td>121</td>\n' +
+            '                    <td>88888888</td>\n' +
+            '                    <td>121</td>\n' +
+            '                    <td><a class="edit" onclick="deleteRow()">删除</a></td>\n' +
+            '                </tr><tr role="row" class="odd">\n' +
+            '                    <td class="sorting_1">40</td>\n' +
+            '                    <td>122</td>\n' +
+            '                    <td>88888888</td>\n' +
+            '                    <td>122</td>\n' +
+            '                    <td><a class="edit" onclick="deleteRow()">删除</a></td>\n' +
+            '                </tr><tr role="row" class="even">\n' +
+            '                    <td class="sorting_1">41</td>\n' +
+            '                    <td>123</td>\n' +
+            '                    <td>88888888</td>\n' +
+            '                    <td>123</td>\n' +
+            '                    <td><a class="edit" onclick="deleteRow()">删除</a></td>\n' +
+            '                </tr><tr role="row" class="odd">\n' +
+            '                    <td class="sorting_1">42</td>\n' +
+            '                    <td>131</td>\n' +
+            '                    <td>88888888</td>\n' +
+            '                    <td>131</td>\n' +
+            '                    <td><a class="edit" onclick="deleteRow()">删除</a></td>\n' +
+            '                </tr><tr role="row" class="even">\n' +
+            '                    <td class="sorting_1">43</td>\n' +
+            '                    <td>132</td>\n' +
+            '                    <td>88888888</td>\n' +
+            '                    <td>132</td>\n' +
+            '                    <td><a class="edit" onclick="deleteRow()">删除</a></td>\n' +
+            '                </tr></tbody>\n' +
+            '            <tfoot>\n' +
+            '            <tr><td rowspan="1" colspan="1">-</td><td rowspan="1" colspan="1">-</td><td rowspan="1" colspan="1">-</td><td rowspan="1" colspan="1">10089</td><td rowspan="1" colspan="1">-</td></tr>\n' +
+            '            </tfoot>\n' +
+            '        </table></body></html>';*/
+        var html = "<html><head><meta charset='utf-8' /></head><body>" + document.getElementById("user_table").outerHTML + "</body></html>";// 使用outerHTML属性获取整个table元素的HTML代码（包括<table>标签），然后包装成一个完整的HTML文档，设置charset为urf-8以防止中文乱码
+        console.log(html);
+        // 实例化一个Blob对象，其构造函数的第一个参数是包含文件内容的数组，第二个参数是包含文件类型属性的对象
+        var blob = new Blob([html], { type: "application/vnd.ms-excel" });
+        var a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = "用户表.xls";
+        document.body.appendChild(a);
+        a.click();
+
+        /*$("#user_table").table2excel({
+            // 不被导出的表格行的CSS class类
+            exclude: ".noExl",
+            // 导出的Excel文档的名称
+            name: "Excel Document Name",
+            // Excel文件的名称
+            filename: "test",
+            //文件后缀名
+            fileext: ".xls",
+            //是否排除导出图片
+            exclude_img: false,
+            //是否排除导出超链接
+            exclude_links: false,
+            //是否排除导出输入框中的内容
+            exclude_inputs: false
+        });*/
+    }
+
+    <!--模态框测试-->
+    function myFunction(materialCode){
+        console.log("ok");
+        //$('#modalText').val(materialCode);
+        $('#modalText').html(materialCode);
+    }
+
+    <!--div右上角设置关闭按钮-->
+    function divClose(){
+        $("#testDiv").remove();
+    }
+
+    <!--金额大写转化-->
+    /*参考中国人民银行于1997年颁布的《支付结算办法》。
+    例：￥106070.00写作壹拾万陆仟零柒拾元整，或壹拾万零陆仟零柒拾元整。
+    详见中国人民银行于1997年颁布的《支付结算办法》附一·五（三）：
+    “阿拉伯金额数字万位或元位是“0”，或者数字中间连续有几个“0”，万位、元位也是“0”，但千位、角位不是“0”时，中文大写金额中可以只写一个零字，也可以不写“零”字。如￥1,680.32，应写成人民币壹仟陆佰捌拾元零叁角贰分，或者写成人民币壹仟陆佰捌拾元叁角贰分;又如￥107,000.53，应写成人民币壹拾万柒仟元零伍角叁分，或者写成人民币壹拾万零柒仟元伍角叁分。”
+    */
+    $("#billMoney").on("input",function (){
+        console.log("输入");
+        amount=parseFloat(this.innerHTML);
+        //amount=1234500607.89;
+        var amountInteger=Math.floor(amount);
+        var amountDecimal=Math.floor((amount-amountInteger)*100); // 精确到分
+        console.log(amountInteger);
+        console.log(amountDecimal);
+        var billMondeySumCapital="",amountIntegerArr=new Array(),j=0,numberMap=['零','壹','贰','叁','肆','伍','陆','柒','捌','玖'],integerUnitMap=['元','拾','佰','仟','万','拾','佰','仟','亿','拾','佰','仟','万亿','拾','佰','仟'],decimalUnitMap=['整','角','分','厘'];
+        //整数部分
+        amountIntegerArr[0]=amountInteger%10;
+        amountInteger=Math.floor(amountInteger/10);
+        while(amountInteger) {
+            amountIntegerArr[++j] = amountInteger % 10;
+            amountInteger=Math.floor(amountInteger/10);
+        }
+        console.log(amountIntegerArr);
+        for(j=amountIntegerArr.length-1;j>=0;j--) {
+            if (!amountIntegerArr[j]) {
+                if (j==8||j==4||j==0)
+                    billMondeySumCapital += integerUnitMap[j];
+                /*else if(amountIntegerArr[j-1])
+                    billMondeySumCapital += numberMap[0];*/
+                if(j&&amountIntegerArr[j-1])
+                    billMondeySumCapital += numberMap[0];
+            }
+            else
+                billMondeySumCapital += numberMap[amountIntegerArr[j]]+integerUnitMap[j];
+        }
+        //小数部分
+        if(amountDecimal) {
+            var jiao=Math.floor(amountDecimal / 10);
+            var fen=amountDecimal % 10;
+            if (fen) {
+                if (jiao) billMondeySumCapital += numberMap[jiao]+decimalUnitMap[1]+numberMap[fen]+decimalUnitMap[2];
+                else billMondeySumCapital += numberMap[0]+numberMap[fen]+decimalUnitMap[2];
+            }else billMondeySumCapital += numberMap[jiao]+decimalUnitMap[1];
+        }else billMondeySumCapital += decimalUnitMap[amountDecimal];
+        console.log(billMondeySumCapital);
+
+        $("#billMoneyCapital").text(billMondeySumCapital);
+    });
+
+    <!--tab切换-->
+	//封装通过id来查找元素的函数，不需要引入jquery库;
+	/*function $(id){
+		return typeof id === "string"?document.getElementById(id):document;
+	}*/
+	window.onload = function(){
+		//获取5个标题名;
+		var items = document.getElementById("tabList").getElementsByTagName("li");
+		//获取5个内容盒子;
+		var	divs = document.getElementById("item").getElementsByTagName("div");
+		if(items.length != divs.length){
+			return;
+		}
+		console.log("tab切换");
+		console.log(items);
+
+		//循环遍历标题名和内容盒子;
+		for(var i = 0,len = items.length; i < len; i++){
+			items[i].id = i;
+			items[i].onmouseover = function(){
+				for(var j = 0,len = items.length; j < len; j++){
+					items[j].className = "";
+					divs[j].style.display = "none";
+				}
+				this.className = "select";
+				divs[this.id].style.display = "block";
+			}
+		}
+	};
+
+    /**
+     * JS实现可编辑的表格
+     * 用法:EditTables(tb1,tb2,tb2,......);
+     * Create by Senty at 2008-04-12
+     **/
+    var tabProduct = document.getElementById("tabProduct");
+    // 设置表格可编辑
+    // 可一次设置多个，例如：EditTables(tb1,tb2,tb2,......)
+    EditTables(tabProduct);
+    //设置多个表格可编辑
+    function EditTables(){
+        for(var i=0;i<arguments.length;i++){
+            SetTableCanEdit(arguments[i]);
+        }
+    }
+    //设置表格是可编辑的
+    function SetTableCanEdit(table){
+        for(var i=1; i<table.rows.length;i++){
+            SetRowCanEdit(table.rows[i]);
+        }
+    }
+    function SetRowCanEdit(row){
+        for(var j=0;j<row.cells.length; j++){
+
+            //如果当前单元格指定了编辑类型，则表示允许编辑
+            var editType = row.cells[j].getAttribute("EditType");
+            if(!editType){
+                //如果当前单元格没有指定，则查看当前列是否指定
+                editType = row.parentNode.rows[0].cells[j].getAttribute("EditType");
+            }
+            if(editType){
+                row.cells[j].onclick = function (){
+                    EditCell(this);
+                }
+            }
+        }
+    }
+    //设置指定单元格可编辑
+    function EditCell(element, editType){
+
+        var editType = element.getAttribute("EditType");
+        if(!editType){
+            //如果当前单元格没有指定，则查看当前列是否指定
+            editType = element.parentNode.parentNode.rows[0].cells[element.cellIndex].getAttribute("EditType");
+        }
+
+        switch(editType){
+            case "TextBox":
+                CreateTextBox(element, element.innerHTML);
+                break;
+            case "DropDownList":
+                CreateDropDownList(element);
+                break;
+            default:
+                break;
+        }
+    }
+    //为单元格创建可编辑输入框
+    function CreateTextBox(element, value){
+        //检查编辑状态，如果已经是编辑状态，跳过
+        var editState = element.getAttribute("EditState");
+        if(editState != "true"){
+            //创建文本框
+            var textBox = document.createElement("INPUT");
+            textBox.type = "text";
+            textBox.className="EditCell_TextBox";
+
+            //设置文本框当前值
+            if(!value){
+                value = element.getAttribute("Value");
+            }
+            textBox.value = value;
+
+            //设置文本框的失去焦点事件
+            textBox.onblur = function (){
+                CancelEditCell(this.parentNode, this.value);
+            };
+            //向当前单元格添加文本框
+            element.innerHTML = "";//清空指定对象的所有字节点
+            element.appendChild(textBox);
+            textBox.focus();
+            textBox.select();
+
+            //改变状态变量
+            element.setAttribute("EditState", "true");
+            element.parentNode.parentNode.setAttribute("CurrentRow", element.parentNode.rowIndex);
+        }
+
+    }
+    //为单元格创建选择框
+    function CreateDropDownList(element, value){
+        //检查编辑状态，如果已经是编辑状态，跳过
+        var editState = element.getAttribute("EditState");
+        if(editState != "true"){
+            //创建下接框
+            var downList = document.createElement("Select");
+            downList.className="EditCell_DropDownList";
+
+            //添加列表项
+            var items = element.getAttribute("DataItems");
+            if(!items){
+                items = element.parentNode.parentNode.rows[0].cells[element.cellIndex].getAttribute("DataItems");
+            }
+            if(items){
+                items = eval("[" + items + "]");
+                for(var i=0; i<items.length; i++){
+                    var oOption = document.createElement("OPTION");
+                    oOption.text = items[i].text;
+                    oOption.value = items[i].value;
+                    downList.options.add(oOption);
+                }
+            }
+
+            //设置列表当前值
+            if(!value){
+                value = element.getAttribute("Value");
+            }
+            downList.value = value;
+
+            //设置创建下接框的失去焦点事件
+            downList.onblur = function (){
+                CancelEditCell(this.parentNode, this.value, this.options[this.selectedIndex].text);
+            };
+
+            //向当前单元格添加创建下接框
+            element.innerHTML = "";//清空指定对象的所有字节点
+            element.appendChild(downList);
+            downList.focus();
+
+            //记录状态的改变
+            element.setAttribute("EditState", "true");
+            element.parentNode.parentNode.setAttribute("LastEditRow", element.parentNode.rowIndex);
+        }
+    }
+    //取消单元格编辑状态
+    function CancelEditCell(element, value, text){
+        element.setAttribute("Value", value);
+        if(text){
+            element.innerHTML = text;
+        }else{
+            element.innerHTML = value;
+        }
+        element.setAttribute("EditState", "false");
+    }
+
+    function upload(){
+        var data = new FormData();
+        var file = document.getElementById("file").files[0];
+        data.append("action", "UploadFilePath");
+        data.append('file', file);
+
+        $.ajax({
+            url: "/upload_download",
+            type: "POST",
+            dataType: "json",
+            data: data,
+            //contentType: 'application/json; charset=UTF-8',
+            //ajax2.0可以不用设置请求头，但是jq帮我们自动设置了，这样的话需要我们自己取消掉
+            contentType:false,
+            //取消帮我们格式化数据，是什么就是什么
+            processData:false,
+            success: function (callback) {
+                console.log(callback);
+                if(callback['ok']){
+                    var materials=callback['materials'];//materialCode,materialName,materialType
+                    console.log("上传成功！");
+                }
+            },
+            error: function(xhr, textStatus, errorThrown) {
+                console.log(xhr.status);// 状态码
+                console.log(xhr.readyState);// 状态
+                console.log(textStatus);// 错误信息
+                //alert('返回值错误');
+            }
+        });
+    };
+</script>
+</body>
+</html>
